@@ -89,6 +89,10 @@ while True:
         else:
             for i in range(numa):
                 action[i] = vals[i+1]
+
+        # Remap action to 0..1
+        for i in range(numa):
+            action[i] = 0.5*action[i] + 0.5
         action = action_filter(action)
         observation, reward, done, info = env.step(action)
         observation = observation_filter(observation)
