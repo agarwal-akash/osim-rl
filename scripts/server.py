@@ -19,6 +19,8 @@ parser = argparse.ArgumentParser(description='Train or test neural net motor con
 parser.add_argument('--visualize', dest='visualize', action='store_true', default=False)
 parser.add_argument('--portnum', dest='portnum', action='store', default=10000, type=int)
 parser.add_argument('--difficulty', dest='difficulty', action='store', default=0, type=int)
+parser.add_argument('--pos-noise', dest='pos_noise', action='store', default=0.0, type=float)
+parser.add_argument('--vel-noise', dest='vel_noise', action='store', default=0.0, type=float)
 args = parser.parse_args()
 
 context = zmq.Context()
@@ -46,12 +48,14 @@ def reward_filter(observation, action, reward):
     return reward
 
 # need to change if
-observation = observation_filter(env.reset(difficulty=args.difficulty))
+observation = observation_filter(env.reset(difficulty=args.difficulty,pos_noise=args.pos_noise,vel_noise=args.vel_noise))
 action = action_filter(np.zeros(env.action_space.shape))
 numo = len(observation)
 numa = len(action)
 
 print("numo = " + str(numo) + " numa = " + str(numa))
+sumreward = 0
+numsteps = 0
 while True:
     message = socket.recv()
     off = 0
@@ -71,7 +75,9 @@ while True:
             req = str(numo) + " " + str(numa)
     elif cmd == 0:
         # reset
-        observation = observation_filter(env.reset(difficulty=args.difficulty))
+        sumreward = 0
+        numsteps = 0
+        observation = observation_filter(env.reset(difficulty=args.difficulty,pos_noise=args.pos_noise,vel_noise=args.vel_noise))
         if USE_BINARY_PROTO:
             for i in range(numo):
                 req.extend(struct.pack('=f', observation[i]))
@@ -97,8 +103,11 @@ while True:
         observation, reward, done, info = env.step(action)
         observation = observation_filter(observation)
         reward = reward_filter(observation, action, reward)
+        sumreward += reward
+        numsteps += 1
         if (done):
             donei = 1
+            print("Episode steps = " + str(numsteps) + " reward = " + str(sumreward))
         else:
             donei = 0
         if USE_BINARY_PROTO:

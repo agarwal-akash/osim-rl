@@ -54,8 +54,14 @@ class RunEnv(OsimEnv):
         # set up muscle strength
         self.osim_model.set_strength(self.env_desc['muscles'])
 
-    def reset(self, difficulty=2, seed=None):
+    def reset(self, difficulty=2, seed=None, pos_noise=0.0, vel_noise=0.0):
         super(RunEnv, self).reset()
+        jnts = ['hip_r', 'knee_r', 'ankle_r', 'hip_l', 'knee_l', 'ankle_l']
+        ja = np.random.uniform(-pos_noise, pos_noise, 6)
+        jv = np.random.uniform(-vel_noise, vel_noise, 6)
+        for i in range(6):
+            self.osim_model.get_joint(jnts[i]).getCoordinate().setValue(self.osim_model.state, ja[i])
+            self.osim_model.get_joint(jnts[i]).getCoordinate().setSpeedValue(self.osim_model.state, jv[i])
         self.istep = 0
         self.last_state = self.get_observation()
         self.setup(difficulty, seed)
