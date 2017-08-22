@@ -29,9 +29,9 @@ class RunEnv(OsimEnv):
     ninput = 41
     noutput = 18
 
-    def __init__(self, visualize = True, max_obstacles = 3):
+    def __init__(self, visualize=True, max_obstacles=3):
         self.max_obstacles = max_obstacles
-        super(RunEnv, self).__init__(visualize = False, noutput = self.noutput)
+        super(RunEnv, self).__init__(visualize=False, noutput=self.noutput)
         self.osim_model.model.setUseVisualizer(visualize)
         self.create_obstacles()
         state = self.osim_model.model.initSystem()
@@ -46,10 +46,10 @@ class RunEnv(OsimEnv):
         # create the new env
         # set up obstacles
         self.env_desc = self.generate_env(difficulty, seed, self.max_obstacles)
-        
+
         self.clear_obstacles(self.osim_model.state)
-        for x,y,r in self.env_desc['obstacles']:
-            self.add_obstacle(self.osim_model.state,x,y,r)
+        for x, y, r in self.env_desc['obstacles']:
+            self.add_obstacle(self.osim_model.state, x, y, r)
 
         # set up muscle strength
         self.osim_model.set_strength(self.env_desc['muscles'])
@@ -93,16 +93,16 @@ class RunEnv(OsimEnv):
         if self.verbose:
             print("JOINTS")
             for i in range(11):
-                print(i,self.osim_model.jointSet.get(i).getName())
+                print(i, self.osim_model.jointSet.get(i).getName())
             print("\nBODIES")
             for i in range(13):
-                print(i,self.osim_model.bodySet.get(i).getName())
+                print(i, self.osim_model.bodySet.get(i).getName())
             print("\nMUSCLES")
             for i in range(18):
-                print(i,self.osim_model.muscleSet.get(i).getName())
+                print(i, self.osim_model.muscleSet.get(i).getName())
             print("\nFORCES")
             for i in range(26):
-                print(i,self.osim_model.forceSet.get(i).getName())
+                print(i, self.osim_model.forceSet.get(i).getName())
             print("")
 
         # for i in range(18):
@@ -135,7 +135,7 @@ class RunEnv(OsimEnv):
         pelvis_pos = [self.pelvis.getCoordinate(i).getValue(self.osim_model.state) for i in range(3)]
         pelvis_vel = [self.pelvis.getCoordinate(i).getSpeedValue(self.osim_model.state) for i in range(3)]
 
-        jnts = ['hip_r','knee_r','ankle_r','hip_l','knee_l','ankle_l']
+        jnts = ['hip_r', 'knee_r', 'ankle_r', 'hip_l', 'knee_l', 'ankle_l']
         joint_angles = [self.osim_model.get_joint(jnts[i]).getCoordinate().getValue(self.osim_model.state) for i in range(6)]
         joint_vel = [self.osim_model.get_joint(jnts[i]).getCoordinate().getSpeedValue(self.osim_model.state) for i in range(6)]
 
@@ -159,7 +159,7 @@ class RunEnv(OsimEnv):
         r = 0.1
         for i in range(self.max_obstacles):
             name = i.__str__()
-            blockos = opensim.Body(name + '-block', 0.0001 , opensim.Vec3(0), opensim.Inertia(1,1,.0001,0,0,0) );
+            blockos = opensim.Body(name + '-block', 0.0001, opensim.Vec3(0), opensim.Inertia(1., 1., .0001, 0., 0., 0.)
             pj = opensim.PlanarJoint(name + '-joint',
                                   self.osim_model.model.getGround(), # PhysicalFrame
                                   opensim.Vec3(0, 0, 0),
@@ -171,7 +171,7 @@ class RunEnv(OsimEnv):
             self.osim_model.model.addJoint(pj)
             self.osim_model.model.addBody(blockos)
 
-            block = opensim.ContactSphere(r, opensim.Vec3(0,0,0), blockos)
+            block = opensim.ContactSphere(r, opensim.Vec3(0., 0., 0.), blockos)
             block.setName(name + '-contact')
             self.osim_model.model.addContactGeometry(block)
 
@@ -190,13 +190,13 @@ class RunEnv(OsimEnv):
             force.setDynamicFriction(0.0)
             force.setViscousFriction(0.0)
 
-            self.osim_model.model.addForce(force);
+            self.osim_model.model.addForce(force)
 
     def clear_obstacles(self, state):
         for j in range(0, self.max_obstacles):
             joint_generic = self.osim_model.get_joint("%d-joint" % j)
             joint = opensim.PlanarJoint.safeDownCast(joint_generic)
-            joint.getCoordinate(1).setValue(state, 0)
+            joint.getCoordinate(1).setValue(state, 0.)
             joint.getCoordinate(2).setValue(state, -0.1)
 
             contact_generic = self.osim_model.get_contact_geometry("%d-contact" % j)
@@ -222,7 +222,7 @@ class RunEnv(OsimEnv):
         joint_generic = self.osim_model.get_joint("%d-joint" % self.num_obstacles)
         joint = opensim.PlanarJoint.safeDownCast(joint_generic)
         
-        newpos = [x,y] 
+        newpos = [x, y] 
         for i in range(2):
             joint.getCoordinate(1 + i).setLocked(state, False)
             joint.getCoordinate(1 + i).setValue(state, newpos[i], False)
@@ -245,11 +245,11 @@ class RunEnv(OsimEnv):
         ys = map(lambda xy: xy[0]*xy[1], list(zip(ys, rs)))
 
         # muscle strength
-        rpsoas = 1
-        lpsoas = 1
+        rpsoas = 1.
+        lpsoas = 1.
         if difficulty == 2:
-            rpsoas = 1 - np.random.normal(0, 0.1)
-            lpsoas = 1 - np.random.normal(0, 0.1)
+            rpsoas = 1. - np.random.normal(0., 0.1)
+            lpsoas = 1. - np.random.normal(0., 0.1)
             rpsoas = max(0.5, rpsoas)
             lpsoas = max(0.5, lpsoas)
 
@@ -259,7 +259,7 @@ class RunEnv(OsimEnv):
         muscles[self.MUSCLES_PSOAS_R] = rpsoas
         muscles[self.MUSCLES_PSOAS_L] = lpsoas
 
-        obstacles = list(zip(xs,ys,rs))
+        obstacles = list(zip(xs, ys, rs))
         obstacles.sort()
 
         return {

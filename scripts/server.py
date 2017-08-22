@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser(description='Train or test neural net motor con
 
 parser.add_argument('--visualize', dest='visualize', action='store_true', default=False)
 parser.add_argument('--portnum', dest='portnum', action='store', default=10000, type=int)
-parser.add_argument('--difficulty', dest='difficulty', action='store', default=0, type=int)
+parser.add_argument('--difficulty', dest='difficulty', action='store', default=2, type=int)
 parser.add_argument('--pos-noise', dest='pos_noise', action='store', default=0.0, type=float)
 parser.add_argument('--vel-noise', dest='vel_noise', action='store', default=0.0, type=float)
 args = parser.parse_args()
@@ -77,7 +77,7 @@ while True:
         # reset
         sumreward = 0
         numsteps = 0
-        observation = observation_filter(env.reset(difficulty=args.difficulty,pos_noise=args.pos_noise,vel_noise=args.vel_noise))
+        observation = observation_filter(env.reset(difficulty=args.difficulty, pos_noise=args.pos_noise, vel_noise=args.vel_noise))
         if USE_BINARY_PROTO:
             for i in range(numo):
                 req.extend(struct.pack('=f', observation[i]))
