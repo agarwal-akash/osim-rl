@@ -159,7 +159,7 @@ class RunEnv(OsimEnv):
         r = 0.1
         for i in range(self.max_obstacles):
             name = i.__str__()
-            blockos = opensim.Body(name + '-block', 0.0001, opensim.Vec3(0), opensim.Inertia(1., 1., .0001, 0., 0., 0.)
+            blockos = opensim.Body(name + '-block', 0.0001, opensim.Vec3(0), opensim.Inertia(1., 1., .0001, 0., 0., 0.))
             pj = opensim.PlanarJoint(name + '-joint',
                                   self.osim_model.model.getGround(), # PhysicalFrame
                                   opensim.Vec3(0, 0, 0),
