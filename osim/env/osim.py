@@ -86,7 +86,7 @@ class OsimEnv(gym.Env):
     noutput = 0
     last_action = None
     spec = None
-    
+
     metadata = {
         'render.modes': ['human'],
         'video.frames_per_second' : 50
@@ -95,7 +95,7 @@ class OsimEnv(gym.Env):
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['osim_model']
-        print ("HERE1")
+        print("HERE1")
         return state
 
     def __setstate__(self, newstate):
@@ -103,7 +103,7 @@ class OsimEnv(gym.Env):
         self.osim_model = Osim(self.model_path, True)
         self.configure()
 
-    def angular_dist(self, t,s):
+    def angular_dist(self, t, s):
         x = (t-s) % (2*math.pi)
         return min(x, 2*math.pi-x)
 
@@ -116,7 +116,7 @@ class OsimEnv(gym.Env):
     def terminate(self):
         pass
 
-    def __init__(self, visualize = True, noutput = None):
+    def __init__(self, visualize=True, noutput=None):
         self.visualize = visualize
         self.osim_model = Osim(self.model_path, self.visualize)
 
@@ -124,9 +124,9 @@ class OsimEnv(gym.Env):
         if not noutput:
             self.noutput = self.osim_model.muscleSet.getSize()
         if not self.action_space:
-            self.action_space = ( [0.0] * self.noutput, [1.0] * self.noutput )
+            self.action_space = ([0.0] * self.noutput, [1.0] * self.noutput)
         if not self.observation_space:
-            self.observation_space = ( [-math.pi] * self.ninput, [math.pi] * self.ninput )
+            self.observation_space = ([-math.pi] * self.ninput, [math.pi] * self.ninput)
 
         self.action_space = convert_to_gym(self.action_space)
         self.observation_space = convert_to_gym(self.observation_space)
