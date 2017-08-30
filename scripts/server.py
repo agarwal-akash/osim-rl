@@ -17,10 +17,10 @@ import struct
 parser = argparse.ArgumentParser(description='Train or test neural net motor controller')
 
 parser.add_argument('--visualize', dest='visualize', action='store_true', default=False)
-parser.add_argument('--portnum', dest='portnum', action='store', default=10000, type=int)
+parser.add_argument('--portnum', dest='portnum', action='store', default=5000, type=int)
 parser.add_argument('--difficulty', dest='difficulty', action='store', default=2, type=int)
-parser.add_argument('--pos-noise', dest='pos_noise', action='store', default=0.0, type=float)
-parser.add_argument('--vel-noise', dest='vel_noise', action='store', default=0.0, type=float)
+parser.add_argument('--pos-noise', dest='pos_noise', action='store', default=0.12, type=float)
+parser.add_argument('--vel-noise', dest='vel_noise', action='store', default=0.05, type=float)
 args = parser.parse_args()
 
 context = zmq.Context()

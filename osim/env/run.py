@@ -29,8 +29,10 @@ class RunEnv(OsimEnv):
     ninput = 41
     noutput = 18
 
-    def __init__(self, visualize=True, max_obstacles=3):
-        self.max_obstacles = max_obstacles
+    def __init__(self, visualize=True, max_obstacles=0, max_possible_obstacles=5):
+        self.max_obstacles = np.random.randint(max_obstacles, max_possible_obstacles)
+        if self.max_obstacles == 1: self.max_obstacles = 0
+        print("Max obstacles = ", self.max_obstacles)
         super(RunEnv, self).__init__(visualize=False, noutput=self.noutput)
         self.osim_model.model.setUseVisualizer(visualize)
         self.create_obstacles()
@@ -56,12 +58,28 @@ class RunEnv(OsimEnv):
 
     def reset(self, difficulty=2, seed=None, pos_noise=0.0, vel_noise=0.0):
         super(RunEnv, self).reset()
+
+    #    tv = np.random.uniform(-vel_noise, vel_noise, 3)
+    #    for i in range(3):
+    #        self.osim_model.get_body('torso').getCoordinate(i).setSpeedValue(self.osim_model.state, tv[i])
+
         jnts = ['hip_r', 'knee_r', 'ankle_r', 'hip_l', 'knee_l', 'ankle_l']
         ja = np.random.uniform(-pos_noise, pos_noise, 6)
         jv = np.random.uniform(-vel_noise, vel_noise, 6)
-        for i in range(6):
-            self.osim_model.get_joint(jnts[i]).getCoordinate().setValue(self.osim_model.state, ja[i])
-            self.osim_model.get_joint(jnts[i]).getCoordinate().setSpeedValue(self.osim_model.state, jv[i])
+
+        rn = 5 # np.random.randint(0, 2)
+        if rn == 0:
+            mult = [2., 2., 2., 0., 0., 0.]
+            ja = ja * mult
+            jv = jv * mult
+        elif rn == 1:
+            mult = [0., 0., 0., 2., 2., 2.]
+            ja = ja * mult
+            jv = jv * mult
+
+     #   for i in range(6):
+     #       self.osim_model.get_joint(jnts[i]).getCoordinate().setValue(self.osim_model.state, ja[i])
+     #       self.osim_model.get_joint(jnts[i]).getCoordinate().setSpeedValue(self.osim_model.state, jv[i])
         self.istep = 0
         self.last_state = self.get_observation()
         self.setup(difficulty, seed)
@@ -123,7 +141,7 @@ class RunEnv(OsimEnv):
                 ret = list(obstacle)
                 ret[0] = ret[0] - x
                 return ret
-        return [100,0,0]
+        return [100., 0., 0.]
         
     def _step(self, action):
         self.last_state = self.current_state
@@ -134,6 +152,13 @@ class RunEnv(OsimEnv):
 
         pelvis_pos = [self.pelvis.getCoordinate(i).getValue(self.osim_model.state) for i in range(3)]
         pelvis_vel = [self.pelvis.getCoordinate(i).getSpeedValue(self.osim_model.state) for i in range(3)]
+
+      #  rn = np.random.randint(100)
+      #  if rn < 4:
+      #      r_vel = np.random.uniform([-0.2, -0.2, -0.15], [0.2, 0.2, 0.15])
+      #      torso_vel = [self.osim_model.get_body('torso').getCoordinate(i).getSpeedValue(self.osim_model.state) for i in range(3)]
+      #      for i in range(3):
+      #          self.osim_model.get_body('torso').getCoordinate(i).setSpeedValue(torso_vel[i] + self.osim_model.state, r_vel[i])
 
         jnts = ['hip_r', 'knee_r', 'ankle_r', 'hip_l', 'knee_l', 'ankle_l']
         joint_angles = [self.osim_model.get_joint(jnts[i]).getCoordinate().getValue(self.osim_model.state) for i in range(6)]
@@ -154,19 +179,19 @@ class RunEnv(OsimEnv):
         return self.current_state
 
     def create_obstacles(self):
-        x = 0
-        y = 0
+        x = 0.
+        y = 0.
         r = 0.1
         for i in range(self.max_obstacles):
             name = i.__str__()
             blockos = opensim.Body(name + '-block', 0.0001, opensim.Vec3(0), opensim.Inertia(1., 1., .0001, 0., 0., 0.))
             pj = opensim.PlanarJoint(name + '-joint',
                                   self.osim_model.model.getGround(), # PhysicalFrame
-                                  opensim.Vec3(0, 0, 0),
-                                  opensim.Vec3(0, 0, 0),
+                                  opensim.Vec3(0., 0., 0.),
+                                  opensim.Vec3(0., 0., 0.),
                                   blockos, # PhysicalFrame
-                                  opensim.Vec3(0, 0, 0),
-                                  opensim.Vec3(0, 0, 0))
+                                  opensim.Vec3(0., 0., 0.),
+                                  opensim.Vec3(0., 0., 0.))
 
             self.osim_model.model.addJoint(pj)
             self.osim_model.model.addBody(blockos)
@@ -238,9 +263,16 @@ class RunEnv(OsimEnv):
         # obstacles
         num_obstacles = max_obstacles*(difficulty > 0) #min(2*(difficulty > 0), max_obstacles)
 
-        xs = np.random.uniform(1.0, 5.0, num_obstacles)
+    #    x0 = np.random.uniform(0.5, 1.5)
+    #    x1 = np.random.uniform(2.5, 7.5)
+    #    print("x0, x1 = ", x0, x1)
+
+        x0 = 0.9
+        x1 = 2.0 + max_obstacles # 1.5 + 1.5 * max_obstacles # 3.5 + max_obstacles * 0.5
+
+        xs = np.random.uniform(x0, x1, num_obstacles)
         ys = np.random.uniform(-0.25, 0.25, num_obstacles)
-        rs = [0.05 + r for r in np.random.exponential(0.05, num_obstacles)]
+        rs = [0.051 + r for r in np.random.exponential(0.051, num_obstacles)]
 
         ys = map(lambda xy: xy[0]*xy[1], list(zip(ys, rs)))
 
@@ -248,7 +280,7 @@ class RunEnv(OsimEnv):
         rpsoas = 1.
         lpsoas = 1.
         if difficulty == 2:
-            rpsoas = 1. - np.random.normal(0., 0.1)
+            rpsoas = 1. - np.random.normal(0., 0.1) # np.random.uniform(-0.01, 0.011)
             lpsoas = 1. - np.random.normal(0., 0.1)
             rpsoas = max(0.5, rpsoas)
             lpsoas = max(0.5, lpsoas)
