@@ -19,8 +19,8 @@ parser = argparse.ArgumentParser(description='Train or test neural net motor con
 parser.add_argument('--visualize', dest='visualize', action='store_true', default=False)
 parser.add_argument('--portnum', dest='portnum', action='store', default=5000, type=int)
 parser.add_argument('--difficulty', dest='difficulty', action='store', default=2, type=int)
-parser.add_argument('--pos-noise', dest='pos_noise', action='store', default=0.12, type=float)
-parser.add_argument('--vel-noise', dest='vel_noise', action='store', default=0.05, type=float)
+parser.add_argument('--pos-noise', dest='pos_noise', action='store', default=0.2, type=float)
+parser.add_argument('--vel-noise', dest='vel_noise', action='store', default=0.1, type=float)
 args = parser.parse_args()
 
 context = zmq.Context()
@@ -48,7 +48,7 @@ def reward_filter(observation, action, reward):
     return reward
 
 # need to change if
-observation = observation_filter(env.reset(difficulty=args.difficulty,pos_noise=args.pos_noise,vel_noise=args.vel_noise))
+observation = observation_filter(env.reset(difficulty=args.difficulty, pos_noise=args.pos_noise, vel_noise=args.vel_noise))
 action = action_filter(np.zeros(env.action_space.shape))
 numo = len(observation)
 numa = len(action)
