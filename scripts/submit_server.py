@@ -108,6 +108,7 @@ while True:
         # Remap action to 0..1
         for i in range(numa):
             action[i] = 0.5*action[i] + 0.5
+        action = np.clip(action, 0.0, 1.0)
         action = action_filter(action)
         observation, reward, done, info = client.env_step(action.tolist())
         if not observation:

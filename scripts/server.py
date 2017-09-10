@@ -3,6 +3,7 @@ import opensim as osim
 import numpy as np
 import sys
 import zmq
+import time
 
 import numpy as np
 
@@ -38,9 +39,19 @@ if (USE_COALESCED_ARRAYS):
     exit(0)
 num_agents = 1
 
-def observation_filter(observation):
+def observation_filter(ob):
+    observation = np.copy(ob)
+    xp = observation[1]
+    observation[1] = 0
+    observation[18] -= xp
+    observation[22] -= xp
+    observation[24] -= xp
+    observation[26] -= xp
+    observation[28] -= xp
+    observation[30] -= xp
+    observation[32] -= xp
+    observation[34] -= xp
     return observation
-
 def action_filter(action):
     return action
 
@@ -56,6 +67,7 @@ numa = len(action)
 print("numo = " + str(numo) + " numa = " + str(numa))
 sumreward = 0
 numsteps = 0
+start_time = time.time()
 while True:
     message = socket.recv()
     off = 0
@@ -75,6 +87,9 @@ while True:
             req = str(numo) + " " + str(numa)
     elif cmd == 0:
         # reset
+        if numsteps > 0:
+            print("Average time per step is "+str((time.time()-start_time)/numsteps))
+        start_time = time.time()
         sumreward = 0
         numsteps = 0
         observation = observation_filter(env.reset(difficulty=args.difficulty, pos_noise=args.pos_noise, vel_noise=args.vel_noise))
@@ -99,6 +114,7 @@ while True:
         # Remap action to 0..1
         for i in range(numa):
             action[i] = 0.5*action[i] + 0.5
+        action = np.clip(action, 0.0, 1.0)
         action = action_filter(action)
         observation, reward, done, info = env.step(action)
         observation = observation_filter(observation)
