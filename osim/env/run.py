@@ -29,12 +29,19 @@ class RunEnv(OsimEnv):
     ninput = 41
     noutput = 18
 
-    def __init__(self, visualize=True, min_obstacles=0, max_obstacles=4, obstacles_bias=1.8):
-        self.max_obstacles = np.random.randint(min_obstacles, max_obstacles)
-        self.obstacles_bias = np.random.uniform(0.6, obstacles_bias)
-        if self.max_obstacles == 1: self.max_obstacles = 3
+    def __init__(self, visualize=True, min_obstacles=0, max_obstacles=3, obstacles_bias=1.1, psoas=0.1, obstacle_radius=0.05, random_push=0.025):
+        self.max_obstacles = np.random.randint(min_obstacles, max_obstacles + 1)
+        self.obstacles_bias = np.random.uniform(0.9, obstacles_bias)
+        if self.max_obstacles == 2: self.max_obstacles = 0
         print("Max obstacles = ", self.max_obstacles)
         print("Obstacles bias = ", self.obstacles_bias)
+        self.psoas = psoas
+        print("psoas value = ", self.psoas)
+        self.obstacle_radius = obstacle_radius
+        print("Obstacle base radius = ", self.obstacle_radius)
+        self.random_push = random_push
+        print("Random push max value = ", self.random_push)
+
         super(RunEnv, self).__init__(visualize=False, noutput=self.noutput)
         self.osim_model.model.setUseVisualizer(visualize)
         self.create_obstacles()
@@ -65,26 +72,33 @@ class RunEnv(OsimEnv):
     #    for i in range(3):
     #        self.osim_model.get_body('torso').getCoordinate(i).setSpeedValue(self.osim_model.state, tv[i])
 
+    #   print("Random joints pos noise = ", pos_noise)
+    #    print("Random joints vel noise = ", vel_noise)
+
         jnts = ['hip_r', 'knee_r', 'ankle_r', 'hip_l', 'knee_l', 'ankle_l']
         ja = np.random.uniform(-pos_noise, pos_noise, 6)
         jv = np.random.uniform(-vel_noise, vel_noise, 6)
 
-        rn = 5 # np.random.randint(0, 2)
+        scale = 1.7
+        rn = np.random.randint(2, 3)
         if rn == 0:
-            mult = [2., 2., 2., 0., 0., 0.]
+            mult = [scale, scale, scale, 0., 0., 0.]
             ja = ja * mult
             jv = jv * mult
         elif rn == 1:
-            mult = [0., 0., 0., 2., 2., 2.]
+            mult = [0., 0., 0., scale, scale, scale]
             ja = ja * mult
             jv = jv * mult
 
-        for i in range(6):
-            self.osim_model.get_joint(jnts[i]).getCoordinate().setValue(self.osim_model.state, ja[i])
-            self.osim_model.get_joint(jnts[i]).getCoordinate().setSpeedValue(self.osim_model.state, jv[i])
+        if rn != 3:
+            for i in range(6):
+                self.osim_model.get_joint(jnts[i]).getCoordinate().setValue(self.osim_model.state, ja[i])
+                self.osim_model.get_joint(jnts[i]).getCoordinate().setSpeedValue(self.osim_model.state, jv[i])
+
         self.istep = 0
-        self.last_state = self.get_observation()
+
         self.setup(difficulty, seed)
+        self.last_state = self.get_observation()
         self.current_state = self.last_state
         return self.last_state
 
@@ -102,7 +116,7 @@ class RunEnv(OsimEnv):
         return delta_x - math.sqrt(lig_pen) * 10e-8
 
     def is_pelvis_too_low(self):
-        return (self.current_state[self.STATE_PELVIS_Y] < 0.65)
+        return (self.current_state[self.STATE_PELVIS_Y] < 0.6)
     
     def is_done(self):
         return self.is_pelvis_too_low() or (self.istep >= self.spec.timestep_limit)
@@ -154,12 +168,7 @@ class RunEnv(OsimEnv):
 
         pelvis_pos = [self.pelvis.getCoordinate(i).getValue(self.osim_model.state) for i in range(3)]
         pelvis_vel = [self.pelvis.getCoordinate(i).getSpeedValue(self.osim_model.state) for i in range(3)]
-
-       # rn = np.random.randint(100)
-       # if rn < 3:
-       #     r_vel = pelvis_vel + np.random.uniform([-0.08, -0.02, -0.02], [0.08, 0.02, 0.02])
-       #     for i in range(3):
-       #         self.pelvis.getCoordinate(i).setSpeedValue(self.osim_model.state, r_vel[i])
+      
       #      torso_vel = [self.osim_model.get_body('torso').getCoordinate(i).getSpeedValue(self.osim_model.state) for i in range(3)]
       #      for i in range(3):
       #          self.osim_model.get_body('torso').getCoordinate(i).setSpeedValue(torso_vel[i] + self.osim_model.state, r_vel[i])
@@ -167,6 +176,22 @@ class RunEnv(OsimEnv):
         jnts = ['hip_r', 'knee_r', 'ankle_r', 'hip_l', 'knee_l', 'ankle_l']
         joint_angles = [self.osim_model.get_joint(jnts[i]).getCoordinate().getValue(self.osim_model.state) for i in range(6)]
         joint_vel = [self.osim_model.get_joint(jnts[i]).getCoordinate().getSpeedValue(self.osim_model.state) for i in range(6)]
+
+        a = self.random_push
+        rn = np.random.randint(100)
+        if rn < 1:
+            for i in range(3):
+                b = a - 0.001 * i
+                pelvis_vel[i] += np.random.uniform(-b, b)
+                self.pelvis.getCoordinate(i).setSpeedValue(self.osim_model.state, pelvis_vel[i])
+
+            for i in range(6):
+                joint_angles[i] += np.random.uniform(-a, a)
+                joint_vel[i] += np.random.uniform(-a, a)
+
+            for i in range(6):
+                self.osim_model.get_joint(jnts[i]).getCoordinate().setValue(self.osim_model.state, joint_angles[i])
+                self.osim_model.get_joint(jnts[i]).getCoordinate().setSpeedValue(self.osim_model.state, joint_vel[i])
 
         mass_pos = [self.osim_model.model.calcMassCenterPosition(self.osim_model.state)[i] for i in range(2)]  
         mass_vel = [self.osim_model.model.calcMassCenterVelocity(self.osim_model.state)[i] for i in range(2)]
@@ -265,27 +290,26 @@ class RunEnv(OsimEnv):
             np.random.seed(seed) # seed the RNG if seed is provided
 
         # obstacles
-        num_obstacles = max_obstacles*(difficulty > 0) #min(2*(difficulty > 0), max_obstacles)
-
-    #    x0 = np.random.uniform(0.5, 1.5)
-    #    x1 = np.random.uniform(2.5, 7.5)
-    #    print("x0, x1 = ", x0, x1)
+        num_obstacles = max_obstacles*(difficulty > 0)
 
         x0 = self.obstacles_bias
         x1 = self.obstacles_bias + 2.0 + max_obstacles # 1.5 + 1.5 * max_obstacles # 3.5 + max_obstacles * 0.5
 
+        if max_obstacles != 3:
+            x1 += 3.0
+
         xs = np.random.uniform(x0, x1, num_obstacles)
         ys = np.random.uniform(-0.25, 0.25, num_obstacles)
-        rs = [0.051 + r for r in np.random.exponential(0.051, num_obstacles)]
+        rs = [0.0525 + r for r in np.random.exponential(0.0525, num_obstacles)]
 
         ys = map(lambda xy: xy[0]*xy[1], list(zip(ys, rs)))
 
         # muscle strength
         rpsoas = 1.
         lpsoas = 1.
-        if difficulty == 2:
-            rpsoas = 1. - np.random.normal(0., 0.1) # np.random.uniform(-0.01, 0.011)
-            lpsoas = 1. - np.random.normal(0., 0.1)
+        if difficulty >= 2:
+            rpsoas = 1. - np.random.normal(0., self.psoas)
+            lpsoas = 1. - np.random.normal(0., self.psoas)
             rpsoas = max(0.5, rpsoas)
             lpsoas = max(0.5, lpsoas)
 
