@@ -2,9 +2,9 @@
 
 This repository contains software required for participation in the NIPS 2017 Challenge: Learning to Run. See more details about the challenge [here](https://www.crowdai.org/challenges/nips-2017-learning-to-run). **If you joined the competition before July 28th, please read about the updates in the [version 1.4.1](https://github.com/stanfordnmbl/osim-rl/tree/master/docs).**
 
-In this competition, you are tasked with developing a controller to enable a physiologically-based human model to navigate a complex obstacle course as quickly as possible. You are provided with a human musculoskeletal model and a physics-based simulation environment where you can synthesize physically and physiologically accurate motion. Potential obstacles include external obstacles like steps, or a slippery floor, along with internal obstacles like muscle weakness or motor noise. You are scored based on the distance you travel through the obstacle course in a set amount of time.
+In this competition, you are tasked with developing a controller to enable a physiologically-based human model to navigate a complex obstacle course as quickly as possible. You are provided with a human musculoskeletal model and a physics-based simulation environment where you can synthesize physically and physiologically accurate motion. Potential obstacles include external obstacles like steps, or a slippery floor, along with internal obstacles like muscle weakness or motor noise. You are scored based on the distance you travel through the obstacle course in a set amount of time.    
 
-![HUMAN environment](https://github.com/kidzik/osim-rl/blob/master/demo/training.gif)
+![HUMAN environment](https://s3.amazonaws.com/osim-rl/videos/running.gif)
 
 To model physics and biomechanics we use [OpenSim](https://github.com/opensim-org/opensim-core) - a biomechanical physics environment for musculoskeletal simulations.
 
@@ -44,7 +44,7 @@ observation = env.reset(difficulty = 0)
 for i in range(200):
     observation, reward, done, info = env.step(env.action_space.sample())
 ```
-![Random walk](https://github.com/stanfordnmbl/osim-rl/blob/master/demo/random.gif)
+![Random walk](https://raw.githubusercontent.com/stanfordnmbl/osim-rl/1679344e509e29bdcc2ee368ddf83e868d93bf61/demo/random.gif)
 
 The function `env.action_space.sample()` returns a random vector for muscle activations, so, in this example, muscles are activated randomly (red indicates an active muscle and blue an inactive muscle).  Clearly with this technique we won't go too far.
 
